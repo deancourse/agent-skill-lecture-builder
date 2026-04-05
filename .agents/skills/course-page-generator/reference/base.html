@@ -2307,6 +2307,50 @@
       overflow: visible;
     }
 
+    .slide-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .section-title-inner {
+      max-width: 80%;
+    }
+
+    .section-title-num {
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      opacity: .5;
+    }
+
+    .section-title-heading {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 1.2rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-title-lead {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      line-height: 1.9;
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+      text-align: left;
+      display: inline-block;
+    }
+
     .slide:last-child {
       page-break-after: avoid;
       break-after: avoid;
@@ -2408,6 +2452,15 @@
       display: none !important;
     }
 
+    /* Section title slide */
+    #print-slides .section-title-heading {
+      background: none !important;
+      -webkit-background-clip: initial !important;
+      background-clip: initial !important;
+      -webkit-text-fill-color: var(--accent) !important;
+      color: var(--accent) !important;
+    }
+
     /* Fix invisible title + prevent text clipping */
     #print-slides .slide-hero .hero h1 {
       background: none !important;
@@ -2498,6 +2551,18 @@
     #print-slides .checklist li {
       font-size: .95rem;
       padding: .45rem 0;
+    }
+
+    #print-slides .instructor {
+      gap: 2rem;
+      align-items: center;
+    }
+
+    #print-slides .instructor-avatar,
+    #print-slides .instructor-avatar-placeholder {
+      width: 280px;
+      height: 280px;
+      flex-shrink: 0;
     }
 
     #print-slides .insight {
@@ -4202,15 +4267,25 @@
         });
         flushCurrentPage();
 
-        var leadAttached = false;
+        // Section title page — standalone centered page when lead exists
+        if (leadClone) {
+          var labelEl = section.querySelector('.section-label');
+          var sectionLabel = labelEl ? labelEl.textContent.trim() : '';
+          var titleSlide = document.createElement('div');
+          titleSlide.className = 'slide slide-section-title';
+          titleSlide.innerHTML =
+            '<div class="section-title-inner">' +
+            (sectionLabel ? '<div class="section-title-num">' + sectionLabel + '</div>' : '') +
+            '<h2 class="section-title-heading">' + mainTitle + '</h2>' +
+            '<div class="section-title-lead">' + leadClone.innerHTML + '</div>' +
+            '</div>';
+          printSlides.appendChild(titleSlide);
+        }
+
         entries.forEach(function (entry) {
           if (entry.type === 'page') {
             var slide = makeSlide(mainTitle, entry.subTitle, 0);
             var body = slide.querySelector('.slide-body');
-            if (!leadAttached && leadClone) {
-              body.appendChild(leadClone.cloneNode(true));
-              leadAttached = true;
-            }
             entry.children.forEach(function (child) {
               var clone = child.cloneNode(true);
               // ## sub-title is shown in the header, remove it from body to avoid duplication
@@ -4367,6 +4442,36 @@
         // to fit. Consecutive images naturally get separate slides.
         var MAX_H = 720;
 
+        // Fit instructor slide: compact layout, then size avatar to fill remaining space.
+        Array.from(printSlides.querySelectorAll('.slide')).forEach(function (s) {
+          var inst = s.querySelector('.instructor');
+          if (!inst) return;
+          var av = s.querySelector('.instructor-avatar, .instructor-avatar-placeholder');
+
+          // Compact the instructor box for print — web CSS has 2rem padding/margin
+          inst.style.padding = '1rem';
+          inst.style.margin = '0';
+          inst.style.gap = '1.5rem';
+          inst.style.alignItems = 'center';
+          inst.style.border = 'none';
+          inst.style.background = 'none';
+
+          if (!av) return;
+          // Start large and shrink avatar only until slide fits 720px
+          var size = 300;
+          var minSize = 80;
+          av.style.width = size + 'px';
+          av.style.height = size + 'px';
+          av.style.flexShrink = '0';
+          void s.offsetHeight;
+          while (s.scrollHeight > MAX_H && size > minSize) {
+            size -= 8;
+            av.style.width = size + 'px';
+            av.style.height = size + 'px';
+            void s.offsetHeight;
+          }
+        });
+
         function shrinkImagesInSlide(slide) {
           var imgs = Array.from(slide.querySelectorAll('img'));
           imgs.forEach(function (img) {
@@ -4396,7 +4501,9 @@
 
         Array.from(printSlides.children).forEach(function (origSlide) {
           if (origSlide.classList.contains('slide-hero') || origSlide.classList.contains('slide-quote')
-            || origSlide.classList.contains('slide-footer') || origSlide.classList.contains('slide-bonus')) return;
+            || origSlide.classList.contains('slide-footer') || origSlide.classList.contains('slide-bonus')
+            || origSlide.classList.contains('slide-section-title')) return;
+          if (origSlide.querySelector('.instructor')) return;
 
           var body = origSlide.querySelector('.slide-body');
           if (!body || body.children.length <= 1) {
@@ -4468,7 +4575,9 @@
 
         // Split overflowing group-blocks across slides
         Array.from(printSlides.querySelectorAll('.slide')).forEach(function (s) {
-          if (s.classList.contains('slide-hero') || s.classList.contains('slide-quote') || s.classList.contains('slide-footer')) return;
+          if (s.classList.contains('slide-hero') || s.classList.contains('slide-quote') || s.classList.contains('slide-footer')
+            || s.classList.contains('slide-section-title')) return;
+          if (s.querySelector('.instructor')) return;
           var body = s.querySelector('.slide-body');
           if (!body) return;
           void s.offsetHeight;
@@ -4574,7 +4683,8 @@
         for (var ti = 0; ti < thinSlides.length - 1; ti++) {
           var ts = thinSlides[ti];
           if (ts.classList.contains('slide-hero') || ts.classList.contains('slide-quote')
-            || ts.classList.contains('slide-footer') || ts.classList.contains('slide-bonus')) continue;
+            || ts.classList.contains('slide-footer') || ts.classList.contains('slide-bonus')
+            || ts.classList.contains('slide-section-title')) continue;
           var tBody = ts.querySelector('.slide-body');
           if (!tBody || tBody.children.length === 0) continue;
           void ts.offsetHeight;
@@ -4582,7 +4692,8 @@
 
           var nextTs = thinSlides[ti + 1];
           if (nextTs.classList.contains('slide-hero') || nextTs.classList.contains('slide-quote')
-            || nextTs.classList.contains('slide-footer') || nextTs.classList.contains('slide-bonus')) continue;
+            || nextTs.classList.contains('slide-footer') || nextTs.classList.contains('slide-bonus')
+            || nextTs.classList.contains('slide-section-title')) continue;
           var nextTBody = nextTs.querySelector('.slide-body');
           if (!nextTBody) continue;
 
@@ -4619,7 +4730,9 @@
 
         // Remove ghost slides whose body is empty or has negligible content
         Array.from(printSlides.querySelectorAll('.slide')).forEach(function (s) {
-          if (s.classList.contains('slide-hero') || s.classList.contains('slide-quote') || s.classList.contains('slide-footer')) return;
+          if (s.classList.contains('slide-hero') || s.classList.contains('slide-quote') || s.classList.contains('slide-footer')
+            || s.classList.contains('slide-section-title')) return;
+          if (s.querySelector('.instructor')) return;
           var body = s.querySelector('.slide-body');
           if (!body || body.children.length === 0 || body.scrollHeight < 50) {
             s.remove();
@@ -4631,6 +4744,27 @@
             s.remove();
           }
         });
+
+        // Auto-shrink special slides (hero, quote, footer, instructor) via zoom
+        // rem is relative to <html> root, not container — fontSize on container has no effect.
+        // zoom scales everything including rem-based sizes.
+        function shrinkSlideToFit(s) {
+          void s.offsetHeight;
+          if (s.scrollHeight <= MAX_H) return;
+          var children = Array.from(s.children);
+          if (!children.length) return;
+          var attempts = 0;
+          while (s.scrollHeight > MAX_H && attempts < 10) {
+            var ratio = (MAX_H - 2) / s.scrollHeight;
+            children.forEach(function (child) {
+              var curZoom = parseFloat(child.style.zoom) || 1;
+              child.style.zoom = (curZoom * ratio).toFixed(4);
+            });
+            void s.offsetHeight;
+            attempts++;
+          }
+        }
+        Array.from(printSlides.querySelectorAll('.slide-hero, .slide-quote, .slide-footer, .slide-section-title')).forEach(shrinkSlideToFit);
 
         // Final clamp: every slide is strictly 720px, no bleeding
         Array.from(printSlides.querySelectorAll('.slide')).forEach(function (s) {
