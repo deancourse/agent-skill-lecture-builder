@@ -1,0 +1,20 @@
+page:
+  title: "ChatGPT Codex 實戰｜用 Vibe Coding 建立可重複使用的 Agent Skill 框架"
+  badge: "Vibe Coding · Codex · Agent Skills"
+  hero_title: "ChatGPT Codex 實戰<br>把隨機生成變成可維護框架"
+  subtitle: "從終端機生成第一版網頁，到用 Markdown 建立穩定框架，再封裝成可重複使用的 Agent Skill。"
+
+quotes:
+  opening:
+    text: "真正有價值的不是只做出一個作品，<br>而是把自己的工作流設計成可持續優化的系統。"
+  closing:
+    text: >
+      當你開始思考內容如何維護、框架如何擴充、流程如何複用，<br>
+      Vibe Coding 的成果才會慢慢從 Demo 走向產品。<br><br>
+      Agent Skill 的魅力，不只是自動化，而是讓你能持續打磨自己的工作方式。
+
+seo:
+  title: "ChatGPT Codex 實戰｜用 Vibe Coding 建立可重複使用的 Agent Skill 框架"
+  description: "從零生成講義網頁、建立 Markdown 框架、封裝成 Agent Skill，完整理解如何把 AI 輔助寫程式做成長期可用的工作流。"
+  image: "https://deanlin.net/course/example/assets/og-example.jpg"
+  url: "https://deanlin.net/course/example/"

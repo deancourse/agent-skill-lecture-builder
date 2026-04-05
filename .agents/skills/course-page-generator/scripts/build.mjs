@@ -1106,6 +1106,7 @@ function build(courseDir) {
     '{{PAGE_LANG}}': cfg.page?.lang || 'zh-TW',
     '{{PAGE_MODE}}': cfg.page?.mode ? `data-mode="${cfg.page.mode}"` : '',
     '{{PAGE_TITLE}}': cfg.page?.title || '',
+    '{{FAVICON}}': cfg.page?.favicon || '',
     '{{OG_TYPE}}': esc(og.type),
     '{{OG_TITLE}}': esc(og.title),
     '{{OG_DESCRIPTION}}': esc(og.description),
