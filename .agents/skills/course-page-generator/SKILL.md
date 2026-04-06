@@ -28,9 +28,51 @@ description: 將講稿或非結構化筆記轉換為約定的 Markdown 格式，
 │       └── og-*.jpg         # OG 縮圖（generate-og.mjs 產出）
 ```
 
-> `config/global.yaml` 不必放在固定位置。Build 會從課程目錄往上搜尋最多 4 層父目錄，找到第一個 `config/global.yaml` 就使用。
-
 ## Workflow
+
+### Step 0：偵測輸入類型
+
+在進入轉換流程之前，先判斷使用者提供的是哪種輸入：
+
+| 情境 | 判斷依據 | 行動 |
+|------|----------|------|
+| **只有主題** | 只給了一句話主題／標題，無對應資料夾或 Markdown | → 執行「主題生成流程」（見下方） |
+| **有講稿內容** | 提供了講稿文字、大綱、或已有 content.md | → 直接進入 Step 1 |
+| **有現有目錄** | 指定了已存在的課程資料夾 | → 讀取後進入 Step 1 |
+
+#### 主題生成流程
+
+當使用者只提供主題（例如「Python 非同步程式設計」）：
+
+1. **決定課程資料夾位置**：將主題轉為 kebab-case 英文（例如 `python-async`）作為資料夾名稱。
+   - 若使用者有指定路徑（例如 `lectures/python-async`），直接使用。
+   - 否則，**用 Glob 工具掃描 repo 根目錄**，觀察現有的課程資料夾放在哪一層（例如是否有 `course/`、`lectures/` 等慣例目錄），沿用同層。
+   - 若無任何慣例可循，直接建在 **repo 根目錄**下（`<course-dir>/`），不假設子目錄。
+
+2. **建立資料夾結構**：
+   ```
+   <root>/<course-dir>/
+   ├── config.yaml      # 從主題推導課程設定
+   ├── content.md       # 根據主題生成骨架
+   └── assets/          # 空資料夾（保留圖片用）
+   ```
+
+3. **生成 `config.yaml`**：根據主題填入基本欄位（`page.title`、`page.hero_title`、`seo.title`、`seo.description`、`quotes.opening`、`quotes.closing`）；`seo.image` 與 `seo.url` 留空或填入佔位符提醒使用者補充。
+
+4. **生成 `content.md` 骨架**：
+   - 推導 3–5 個主要章節（`#`），每章節下 1–2 個子章節（`##`）與 2–3 張卡片（`### Emoji Title`）
+   - 每張卡片留 2–4 個條列式占位點（重點提示，非最終內容）
+   - 在最後加入 `[summary]` 區塊，列出各章節預期的學習成果
+   - 所有占位內容用 `<!-- TODO: ... -->` 或簡短提示標記，讓使用者知道哪裡需要補充
+   - 骨架本身應具備足夠結構讓 build 可以成功執行
+
+5. **確認 global config**：檢查是否已有 `config/global.yaml`，若無，在回覆中提示使用者參考 Step 2 建立。
+
+6. **告知使用者**：列出已建立的檔案清單，並說明下一步（補充內容或直接 build）。
+
+7. **完成後繼續 Step 2 以下流程**（確認 config → build → OG 縮圖）。
+
+---
 
 ### Step 1：將講稿轉為結構化 Markdown
 
@@ -156,8 +198,10 @@ Config 分為兩層：
 
 | 檔案 | 用途 | 必要性 |
 |------|------|--------|
-| `course/config/global.yaml` | 全域設定（講者資訊、社群連結、頁尾） | 首次使用時建立一次 |
-| `course/<course-dir>/config.yaml` | 課程專屬設定（覆蓋 global） | 每個課程各一份 |
+| `config/global.yaml` | 全域設定（講者資訊、社群連結、頁尾） | 首次使用時建立一次 |
+| `<course-dir>/config.yaml` | 課程專屬設定（覆蓋 global） | 每個課程各一份 |
+
+> `config/global.yaml` 不需要放在固定位置，build 會從課程目錄往上搜尋最多 4 層父目錄。只需確保它存在於課程目錄的某個祖層即可。
 
 #### 首次設定：建立 Global Config
 
@@ -204,8 +248,8 @@ page:
 seo:
   title: "SEO 標題"
   description: "頁面描述"
-  image: "https://your-domain.example/course/<course-dir>/assets/og-image.jpg"
-  url: "https://your-domain.example/course/<course-dir>/"
+  image: "https://yourdomain.com/<course-dir>/assets/og-image.jpg"
+  url: "https://yourdomain.com/<course-dir>/"
 
 quotes:
   opening:
