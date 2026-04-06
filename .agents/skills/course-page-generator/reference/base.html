@@ -4267,9 +4267,9 @@
         });
         flushCurrentPage();
 
-        // Section title page — standalone centered page when lead exists
-        if (leadClone) {
-          var labelEl = section.querySelector('.section-label');
+        // Section title page — always render (except instructor); lead is optional
+        var labelEl = section.querySelector('.section-label');
+        if (labelEl && labelEl.id !== 'instructor') {
           var sectionLabel = labelEl ? labelEl.textContent.trim() : '';
           var titleSlide = document.createElement('div');
           titleSlide.className = 'slide slide-section-title';
@@ -4277,7 +4277,7 @@
             '<div class="section-title-inner">' +
             (sectionLabel ? '<div class="section-title-num">' + sectionLabel + '</div>' : '') +
             '<h2 class="section-title-heading">' + mainTitle + '</h2>' +
-            '<div class="section-title-lead">' + leadClone.innerHTML + '</div>' +
+            (leadClone ? '<div class="section-title-lead">' + leadClone.innerHTML + '</div>' : '') +
             '</div>';
           printSlides.appendChild(titleSlide);
         }
